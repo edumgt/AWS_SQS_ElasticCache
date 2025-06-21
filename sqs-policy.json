@@ -1,0 +1,6 @@
+{
+    "QueueUrl": "https://sqs.ap-northeast-2.amazonaws.com/086015456585/my-sns-queue",
+    "Attributes": {
+        "Policy": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"sns.amazonaws.com\"},\"Action\":\"SQS:SendMessage\",\"Resource\":\"arn:aws:sqs:ap-northeast-2:086015456585:my-sns-queue\",\"Condition\":{\"ArnEquals\":{\"aws:SourceArn\":\"arn:aws:sns:ap-northeast-2:086015456585:my-sns-topic\"}}}]}"
+    }
+}
