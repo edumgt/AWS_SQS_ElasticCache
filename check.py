@@ -2,8 +2,8 @@ import hashlib
 import json
 
 # 메시지 본문 (예시)
-body = '안녕하세요! 이건 테스트 메시지입니다.'
-expected_md5 = "11b4b81379e4a214e981839eae5b94bd"
+body = '오늘은 덥지 않습니다. 이건 테스트 메시지입니다.'
+expected_md5 = "01220aa2b2166275492f664132f99a16"
 
 # MD5 계산
 calculated_md5 = hashlib.md5(body.encode()).hexdigest()
