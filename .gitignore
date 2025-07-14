@@ -14,7 +14,7 @@ edumgt-key
 /Y*
 /n*
 *.csv
-.env
+
 target/
 .idea/
 *.iml
