@@ -92,3 +92,10 @@ TimeoutError: [WinError 10060] 연결된 구성원으로부터 응답이 없어 
 ![alt text](image-18.png)
 
 ## 기존 서브넷과의 문제로 신규 VPC 및 서브넷 구성 후 연결 필요
+
+
+## Server 방식으로
+![alt text](image-19.png)
+![alt text](image-20.png)
+![alt text](image-21.png)
+

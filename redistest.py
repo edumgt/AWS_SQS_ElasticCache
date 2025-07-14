@@ -1,7 +1,7 @@
 import redis
 
 # ElastiCache Redis 엔드포인트와 포트
-REDIS_HOST = "edumgt-7c7abo.serverless.apn2.cache.amazonaws.com"  # 예: my-redis.abcd.ng.0001.apn2.cache.amazonaws.com
+REDIS_HOST = "edumgt-redis-7c7abo.serverless.apn2.cache.amazonaws.com"  # 예: my-redis.abcd.ng.0001.apn2.cache.amazonaws.com
 REDIS_PORT = 6379  # 기본 Redis 포트
 
 # Redis 클라이언트 생성
