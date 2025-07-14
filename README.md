@@ -26,6 +26,12 @@ FIFO Queue: 정확히 1회 처리, 메시지 순서 보장, 처리량 제한
 
 마이크로서비스 간 데이터 전달
 
+## S3 완전 개방
+aws s3api put-bucket-policy `
+  --bucket edumgt-java-education `
+  --policy file://s3-policy.json
+
+
 ## 큐 만들기
 aws sqs create-queue --queue-name my-test-queue
 
