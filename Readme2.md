@@ -99,3 +99,16 @@ TimeoutError: [WinError 10060] 연결된 구성원으로부터 응답이 없어 
 ![alt text](image-20.png)
 ![alt text](image-21.png)
 
+## 외부 퍼블릭 접속 불가
+
+비추천 (테스트용만 가능):
+EC2에 직접 Redis 설치
+
+보안그룹에서 0.0.0.0/0 에 TCP 6379 개방 (매우 위험)
+
+퍼블릭 IP로 접근 가능
+
+sudo yum install redis
+sudo systemctl start redis
+redis-cli -h your-ec2-public-ip -p 6379
+🔥 주의: 이 방식은 공격에 매우 취약합니다. 운영 환경에서는 절대 사용 금지.
