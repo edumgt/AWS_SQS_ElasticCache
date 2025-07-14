@@ -6,7 +6,7 @@ import json
 sqs = boto3.client('sqs', region_name='ap-northeast-2')
 
 # 사용 중인 SQS Queue URL
-QUEUE_URL = 'https://sqs.ap-northeast-2.amazonaws.com/086015456585/my-sns-queue'
+QUEUE_URL = 'https://sqs.ap-northeast-2.amazonaws.com/086015456585/my-test-queue'
 
 def send_message(message_body: dict):
     """메시지 전송 함수"""
