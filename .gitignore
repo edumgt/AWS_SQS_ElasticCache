@@ -18,3 +18,5 @@ edumgt-key
 target/
 .idea/
 *.iml
+__pycache__/
+.env
