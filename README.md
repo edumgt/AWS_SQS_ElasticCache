@@ -7,6 +7,7 @@
 - [메시지 송수신](#메시지-송수신)
 - [Python(boto3) 테스트](#pythonboto3-테스트)
 - [SNS 연동](#sns-연동)
+- [마이크로서비스 간 메시지 전달](#마이크로서비스-간-메시지-전달)
 - [민감정보 체크](#민감정보-체크)
 
 ---
@@ -26,7 +27,7 @@
 ### 활용 예시
 - 주문/결제 처리 비동기화
 - 이미지 업로드 후 썸네일 생성
-- 마이크로서비스 간 메시지 전달
+- 마이크로서비스 간 메시지 전달 → [예제 보기](#마이크로서비스-간-메시지-전달)
 
 ---
 
@@ -54,7 +55,7 @@ sqs:CreateQueue on resource: arn:aws:sqs:<region>:<account-id>:my-test-queue
 ```
 
 ### 콘솔 권한 부여 화면
-![권한 부여](image.png)
+![권한 부여](images/image.png)
 
 ### 생성 결과 예시
 ```json
@@ -64,7 +65,7 @@ sqs:CreateQueue on resource: arn:aws:sqs:<region>:<account-id>:my-test-queue
 ```
 
 ### 콘솔 확인
-![콘솔 확인](image-1.png)
+![콘솔 확인](images/image-1.png)
 
 ---
 
@@ -147,7 +148,7 @@ MD5 검증: ✅ 일치
 ```
 
 ### 콘솔에서 대기 확인
-![콘솔 대기 확인](image-2.png)
+![콘솔 대기 확인](images/image-2.png)
 
 ---
 
@@ -168,7 +169,7 @@ SNS:CreateTopic on resource: arn:aws:sns:<region>:<account-id>:my-sns-topic
 ```
 
 ### 권한 부여 화면
-![SNS 권한 부여](image-3.png)
+![SNS 권한 부여](images/image-3.png)
 
 ### ARN 생성 결과 예시
 ```json
@@ -236,12 +237,106 @@ aws sns publish \
 ```
 
 ### 콘솔 확인
-![SNS 메시지 확인](image-4.png)
+![SNS 메시지 확인](images/image-4.png)
 
 ### sqs.py 수정 예시
 ```python
 QUEUE_URL = 'https://sqs.<region>.amazonaws.com/<account-id>/my-sns-queue'
 ```
+
+---
+
+## 마이크로서비스 간 메시지 전달
+
+SQS를 활용하면 **서비스 간 직접 호출 없이** 이벤트 기반으로 통신할 수 있습니다.
+
+### 시나리오 구성
+
+```
+[주문 서비스 (producer.py)]
+        ↓ ORDER_PLACED 이벤트 전송
+    [SQS 큐: order-queue]
+        ↓ 이벤트 수신
+[재고 서비스 (consumer.py)]
+        ↓ 재고 차감 처리
+```
+
+### SQS 큐 생성
+
+```bash
+aws sqs create-queue --queue-name order-queue
+```
+
+### 주문 서비스 — producer.py
+
+`producer.py`는 주문 이벤트를 JSON 형태로 SQS에 전송합니다.
+
+```python
+order = {
+    "event": "ORDER_PLACED",
+    "order_id": "uuid...",
+    "product_id": "PROD-001",
+    "quantity": 2,
+    "customer_id": "CUST-101",
+    "timestamp": "2024-01-01T00:00:00"
+}
+sqs.send_message(QueueUrl=QUEUE_URL, MessageBody=json.dumps(order))
+```
+
+실행:
+```bash
+python producer.py
+```
+
+```text
+[주문 서비스] ✅ 주문 이벤트 전송 완료
+  OrderId  : a1b2c3d4-...
+  ProductId: PROD-001
+  Quantity : 2
+  MessageId: f9e8d7c6-...
+```
+
+### 재고 서비스 — consumer.py
+
+`consumer.py`는 SQS에서 주문 이벤트를 폴링(Long Polling)하여 재고를 차감하고 메시지를 삭제합니다.
+MD5 무결성 검증을 포함하여 손상된 메시지를 자동으로 건너뜁니다.
+
+```python
+response = sqs.receive_message(
+    QueueUrl=QUEUE_URL,
+    MaxNumberOfMessages=5,
+    WaitTimeSeconds=5   # Long Polling
+)
+```
+
+실행:
+```bash
+python consumer.py
+```
+
+```text
+[재고 서비스] 📡 주문 이벤트 수신 대기 중...
+
+[재고 서비스] ✅ 재고 차감 완료
+  OrderId  : a1b2c3d4-...
+  ProductId: PROD-001
+  차감 수량 : 2  남은 재고: 8
+  🗑️ 메시지 삭제 완료
+
+[재고 서비스] 총 3건 처리 완료.
+```
+
+### 흐름 요약
+
+| 단계 | 역할 | 파일 |
+| --- | --- | --- |
+| 1 | 주문 이벤트 생성 및 SQS 전송 | `producer.py` |
+| 2 | SQS 폴링 → 이벤트 수신 | `consumer.py` |
+| 3 | MD5 무결성 검증 | `consumer.py` |
+| 4 | 재고 차감 비즈니스 로직 처리 | `consumer.py` |
+| 5 | 처리 완료 메시지 삭제 | `consumer.py` |
+
+> `producer.py`와 `consumer.py`의 `QUEUE_URL`을 실제 SQS URL로 변경 후 사용하세요.
 
 ---
 
@@ -284,7 +379,7 @@ boto3는 Python에서 AWS 서비스를 제어할 수 있게 해주는 공식 SDK
 ---
 
 ## 콘솔 설정
-![콘솔 설정](image-5.png)
+![콘솔 설정](images/image-5.png)
 
 ---
 
@@ -310,13 +405,13 @@ boto3는 Python에서 AWS 서비스를 제어할 수 있게 해주는 공식 SDK
 캐시는 **자주 사용하는 데이터를 빠르게 꺼내기 위해 미리 저장해두는 공간**입니다.
 쉽게 말해 **임시 저장소** 또는 **빠른 복사본**입니다.
 
-![캐시 개념](image-6.png)
+![캐시 개념](images/image-6.png)
 
 ---
 
 ## 네트워크/서브넷 오류 대응
 ### 오류 화면
-![서브넷 오류](image-7.png)
+![서브넷 오류](images/image-7.png)
 
 **원인**: 사용 중인 서브넷이 3개 미만
 
@@ -324,40 +419,40 @@ boto3는 Python에서 AWS 서비스를 제어할 수 있게 해주는 공식 SDK
 1. 사용자 설정으로 변경
 2. 서브넷 3개 이상 생성 후 설정
 
-![설정 변경](image-8.png)
-![VPC 상태](image-9.png)
-![서브넷 관리](image-10.png)
+![설정 변경](images/image-8.png)
+![VPC 상태](images/image-9.png)
+![서브넷 관리](images/image-10.png)
 
 ---
 
 ## VPC 서브넷 추가
-![서브넷 추가](image-11.png)
-![IP 대역 설정](image-12.png)
+![서브넷 추가](images/image-11.png)
+![IP 대역 설정](images/image-12.png)
 
 > IP 대역 설정 시 임의 값을 입력 후 하단 화살표로 조정
 
 ### 서브넷 3개 확인
-![서브넷 확인](image-13.png)
+![서브넷 확인](images/image-13.png)
 
 ---
 
 ## ElastiCache 설정 재시도
 서브넷을 3개 모두 선택 후 설정합니다.
 
-![서브넷 리프레시](image-14.png)
+![서브넷 리프레시](images/image-14.png)
 
 ---
 
 ## 캐시 서버 생성
 > 생성에 수 분 소요될 수 있습니다.
 
-![생성 대기](image-15.png)
-![생성 완료](image-16.png)
+![생성 대기](images/image-15.png)
+![생성 완료](images/image-16.png)
 
 ---
 
 ## 엔드포인트 복사
-![엔드포인트](image-17.png)
+![엔드포인트](images/image-17.png)
 
 ---
 
@@ -375,16 +470,16 @@ TimeoutError: [WinError 10060] 연결된 구성원으로부터 응답이 없어 
 
 **해결**: 방화벽 포트 개방 필요
 
-![방화벽 설정](image-18.png)
+![방화벽 설정](images/image-18.png)
 
 > 기존 서브넷 구성 문제로 신규 VPC/서브넷 구성 후 연결 필요할 수 있음
 
 ---
 
 ## Server 방식 설정
-![Server 방식 1](image-19.png)
-![Server 방식 2](image-20.png)
-![Server 방식 3](image-21.png)
+![Server 방식 1](images/image-19.png)
+![Server 방식 2](images/image-20.png)
+![Server 방식 3](images/image-21.png)
 
 ---
 
